@@ -4,7 +4,7 @@ module Main where
 
     import Data.Set (Set)
     import qualified Data.Set as Set
-
+    
     type Position = (Int, Int)
 
     main :: IO ()
@@ -23,7 +23,7 @@ module Main where
                 | a == '.' = parseInputAcc (as:rs) (x + 1, y) acc
                 | otherwise = parseInputAcc (as:rs) (x + 1, y) (Map.insertWith (++) a [(x, y)] acc)
 
-    -- takes list of antennas and returns list of antinodes
+    -- takes list of antennas and returns list of antinodes (for part 1)
     antinodes :: [Position] -> [Position]
     antinodes [a] = []
     antinodes (a:as) = singleAntinodes a as ++ antinodes as
@@ -32,6 +32,26 @@ module Main where
             singleAntinodes _ [] = []
             singleAntinodes (ax, ay) ((bx, by):bs) =
                 (2 * ax - bx, 2 * ay - by):(2 * bx - ax, 2 * by - ay):singleAntinodes (ax, ay) bs
+
+    -- takes size of field and list of antennas and returns list of antinodes (for part 2)
+    antinodesExt :: Position -> [Position] -> [Position]
+    antinodesExt bor [a] = []
+    antinodesExt bor (a:as) = singleAntinodes bor a as ++ antinodesExt bor as
+        where
+            singleAntinodes :: Position -> Position -> [Position] -> [Position]
+            singleAntinodes _ _ [] = []
+            singleAntinodes bor (ax, ay) ((bx, by):bs) = 
+                let dx = bx - ax
+                    dy = by - ay
+                    d = gcd dx dy in line bor (dx `div` d, dy `div` d) (ax, ay) ++ singleAntinodes bor (ax, ay) bs
+            
+            line :: Position -> Position -> Position -> [Position]
+            line bor (dx, dy) a = lineExpl bor (-dx, -dy) a ++ lineExpl bor (dx, dy) a
+                where
+                    lineExpl :: Position -> Position -> Position -> [Position]
+                    lineExpl (bx, by) (dx, dy) (x, y) 
+                        | x >= 0 && x < bx && y >= 0 && y < by = (x, y):lineExpl (bx, by) (dx, dy) (x + dx, y + dy)
+                        | otherwise = []
 
     inField :: Position -> Position -> Bool
     inField (bx, by) (x, y) = x >= 0 && x < bx && y >= 0 && y < by
@@ -45,11 +65,12 @@ module Main where
             mapHeight :: String -> Int
             mapHeight = length . lines
 
+    calculate :: ([Position] -> [Position]) -> Map Char [Position] -> Int
+    calculate f = Set.size . Set.fromList . concatMap f . Map.elems
+
     puzzle1 :: String -> Int
-    puzzle1 s = calculate (mapDimentions s) (parseInput s)
-        where
-            calculate :: Position -> Map Char [Position] -> Int
-            calculate bor = Set.size . Set.fromList . concatMap (filter (inField bor) . antinodes) . Map.elems
+    puzzle1 s = calculate (filter (inField (mapDimentions s)) . antinodes) (parseInput s)
 
     puzzle2 :: String -> Int
-    puzzle2 = undefined
+    puzzle2 s = calculate (antinodesExt (mapDimentions s)) (parseInput s)
+    
