@@ -28,9 +28,9 @@ module Main where
             compressAcc (Nothing:as) (Just b:bs) = b : compressAcc as bs
 
             emptySpace :: [Maybe Int] -> Int
-            emptySpace [] = 0
-            emptySpace (Nothing:xs) = 1 + emptySpace xs
-            emptySpace (x:xs) = emptySpace xs
+            emptySpace = foldr (\x i -> case x of
+                Nothing -> i + 1
+                deault -> i) 0
 
     calculateChecksum :: [Int] -> Int
     calculateChecksum = calculateChecksumAcc 0
