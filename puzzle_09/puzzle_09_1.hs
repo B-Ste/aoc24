@@ -1,5 +1,4 @@
 module Main where
-    import Debug.Trace (trace)
 
     main :: IO ()
     main = do
