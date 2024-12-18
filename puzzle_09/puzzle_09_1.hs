@@ -5,7 +5,6 @@ module Main where
     main = do
         input <- readFile "input.txt"
         (print . puzzle1) input
-        (print . puzzle2) input
 
     parseInput :: String -> [Maybe Int]
     parseInput = parseInputAcc 0
@@ -20,9 +19,8 @@ module Main where
     compress :: [Maybe Int] -> [Int]
     compress s = take (length s - emptySpace s) (compressAcc s (reverse s))
         where
+            -- this only works because of lazy evaluation; don't make it public
             compressAcc :: [Maybe Int] -> [Maybe Int] -> [Int]
-            compressAcc [] _ = []
-            compressAcc _ [] = []
             compressAcc a (Nothing:bs) = compressAcc a bs
             compressAcc (Just a:as) b = a : compressAcc as b
             compressAcc (Nothing:as) (Just b:bs) = b : compressAcc as bs
@@ -41,6 +39,3 @@ module Main where
 
     puzzle1 :: String -> Int
     puzzle1 = calculateChecksum . compress . parseInput
-
-    puzzle2 :: String -> Int
-    puzzle2 = undefined
