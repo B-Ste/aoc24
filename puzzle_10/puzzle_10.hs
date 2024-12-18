@@ -24,19 +24,29 @@ module Main where
     explore :: Map Position Int -> Position -> [Position]
     explore m (x, y)
         | a == 9 = [(x, y)]
-        | otherwise = exploreFollower a (x + 1, y) m
-            ++ exploreFollower a (x - 1, y) m
-            ++ exploreFollower a (x, y - 1) m
-            ++ exploreFollower a (x, y + 1) m
+        | otherwise = exploreFollower explore [] a (x + 1, y) m
+            ++ exploreFollower explore [] a (x - 1, y) m
+            ++ exploreFollower explore [] a (x, y - 1) m
+            ++ exploreFollower explore [] a (x, y + 1) m
         where
             Just a = Map.lookup (x, y) m
 
-            exploreFollower :: Int -> Position -> Map Position Int -> [Position]
-            exploreFollower a (x, y) m = let l = Map.lookup (x, y) m in case l of
-                Nothing -> []
-                (Just b) 
-                    | a + 1 == b -> explore m (x, y)
-                    | otherwise -> []
+    exploreRating :: Map Position Int -> Position -> Int
+    exploreRating m (x, y)
+        | a == 9 = 1
+        | otherwise = exploreFollower exploreRating 0 a (x + 1, y) m
+            + exploreFollower exploreRating 0 a (x - 1, y) m
+            + exploreFollower exploreRating 0 a (x, y - 1) m
+            + exploreFollower exploreRating 0 a (x, y + 1) m
+        where
+            Just a = Map.lookup (x, y) m
+
+    exploreFollower :: (Map Position Int -> Position -> a) -> a -> Int -> Position -> Map Position Int -> a
+    exploreFollower f zero a (x, y) m = let l = Map.lookup (x, y) m in case l of
+        Nothing -> zero
+        (Just b) 
+            | a + 1 == b -> f m (x, y)
+            | otherwise -> zero
     
     calculateTrailHeads :: Map Position Int -> [Position] -> Int
     calculateTrailHeads m = sum . map (length . nub . explore m)
@@ -45,4 +55,4 @@ module Main where
     puzzle1 s = let m = parseInput s in calculateTrailHeads m (startingPositions m) 
 
     puzzle2 :: String -> Int
-    puzzle2 = undefined
+    puzzle2 s = let m = parseInput s in (sum . map (exploreRating m) . startingPositions) m 
