@@ -3,10 +3,8 @@ module Main where
     import qualified Data.Map as Map
     import Data.Set (Set)
     import qualified Data.Set as Set
-    import Data.List (delete, sort, nub, (\\))
+    import Data.List (delete, sort, (\\))
 
-    -- area, fences
-    type Region = (Int, Int)
     type Position = (Int, Int)
 
     main :: IO ()
