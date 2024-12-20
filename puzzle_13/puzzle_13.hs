@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Use mapMaybe" #-}
 module Main where
     import Data.Ratio ((%))
     import Data.Maybe (catMaybes)
@@ -12,6 +10,7 @@ module Main where
     main = do
         input <- readFile "input.txt"
         (print . puzzle1) input
+        (print . puzzle2) input
 
     parseInput :: String -> [Problem]
     parseInput = parseInputAcc . filter (/= "") . lines
@@ -23,6 +22,9 @@ module Main where
             parseLine :: [String] -> (Rational, Rational)
             parseLine (('X':a:xs):('Y':b:ys):ls) = (read (init xs) % 1, read ys % 1)
             parseLine (x:xs) = parseLine xs
+
+    preProcessor :: Problem -> Problem
+    preProcessor (P a b (gx, gy)) = P a b (10000000000000 + gx, 10000000000000 + gy)
 
     solve :: Problem -> Maybe Solution
     solve (P (ax, ay) (bx, by) (gx, gy))
@@ -41,3 +43,6 @@ module Main where
 
     puzzle1 :: String -> Int
     puzzle1 = calculate id
+
+    puzzle2 :: String -> Int
+    puzzle2 = calculate preProcessor
