@@ -11,9 +11,10 @@ module Main where
     main = do
         input <- readFile "input.txt"
         (print . puzzle1) input
+        (print . puzzle2) input
 
     parseInput :: String -> Map Char [Position]
-    parseInput s = (Map.unionsWith (++) . zipWith parseLine [0..]) (lines s)
+    parseInput = Map.unionsWith (++) . zipWith parseLine [0..] . lines
         where
             parseLine :: Int -> String -> Map Char [Position]
             parseLine l = Map.unionsWith (++) . zipWith (\c x -> Map.singleton x [(c, l)]) [0..]
@@ -49,5 +50,36 @@ module Main where
                 where
                     (x, y) = p !! i
 
+    buildSides :: [Position] -> Int
+    buildSides l = length l * (sum . map (\x -> outerEdges l x + innerEdges l x)) l
+        where
+            outerEdges :: [Position] -> Position -> Int
+            outerEdges l (x, y) = checkOuterEdge (x - 1, y) (x, y - 1) l 
+                + checkOuterEdge (x - 1, y) (x, y + 1) l
+                + checkOuterEdge (x + 1, y) (x, y - 1) l
+                + checkOuterEdge (x + 1, y) (x, y + 1) l
+
+            checkOuterEdge :: Position -> Position -> [Position] -> Int
+            checkOuterEdge p1 p2 l
+                | p1 `notElem` l && p2 `notElem` l = 1
+                | otherwise = 0
+
+            innerEdges :: [Position] -> Position -> Int
+            innerEdges l (x, y) = checkInnerEdge (x - 1, y - 1) (x - 1, y) (x, y - 1) l
+                + checkInnerEdge (x + 1, y - 1) (x + 1, y) (x, y - 1) l
+                + checkInnerEdge (x - 1, y + 1) (x - 1, y) (x, y + 1) l
+                + checkInnerEdge (x + 1, y + 1) (x + 1, y) (x, y + 1) l
+
+            checkInnerEdge :: Position -> Position -> Position -> [Position] -> Int
+            checkInnerEdge d p1 p2 l
+                | d `notElem` l && p1 `elem` l && p2 `elem` l = 1
+                | otherwise = 0
+
+    calculate :: ([Position] -> Int) -> String -> Int
+    calculate f = sum . map f . concatMap (buildRegions . snd) . Map.toList . parseInput
+
     puzzle1 :: String -> Int
-    puzzle1 = sum . map buildFence . concatMap (buildRegions . snd) . Map.toList . parseInput
+    puzzle1 = calculate buildFence
+
+    puzzle2 :: String -> Int
+    puzzle2 = calculate buildSides
