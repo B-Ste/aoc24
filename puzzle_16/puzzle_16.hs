@@ -61,7 +61,7 @@ puzzle1 s = snd . head . dropWhile (\(V p _, _) -> p /= (1, width s - 2))
     $ dijkstra (V (height s - 2, 1) (0, 1)) (parseInput s)
 
 puzzle2 :: String -> Int
-puzzle2 s = List.maximum . List.map (Map.size . Map.mapKeys (\(V p _) -> p)) $ results s
+puzzle2 = List.maximum . List.map (Map.size . Map.mapKeys (\(V p _) -> p)) . results
     where
         results :: String -> [Map Vertex Int]
         results s = List.map (Map.filter (== puzzle1 s) . Map.unionWith (+) (start s)) $ end s
