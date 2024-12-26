@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Data.List as List (filter)
+import qualified Data.List as List (filter, map, maximum)
 import Data.Array (Array)
 import qualified Data.Array as Array
 import Data.Set (Set)
@@ -44,12 +44,12 @@ dijkstra start map = explore (Heap.singleton (0, start)) Set.empty map
         explore q seen map = if Heap.isEmpty q then []
             else let (Just ((d, v), q')) = Heap.view q in
                 if v `Set.notMember` seen then
-                    (v, d) : explore (exploreVertex d v q' seen map) (Set.insert v seen) map
+                    (v, d) : explore (exploreVertex d v q' map) (Set.insert v seen) map
                 else
                     explore q' seen map
 
-        exploreVertex :: Int -> Vertex -> MinPrioHeap Int Vertex -> Set Vertex -> Array Position Char -> MinPrioHeap Int Vertex
-        exploreVertex dis (V pos ori) q seen map = let
+        exploreVertex :: Int -> Vertex -> MinPrioHeap Int Vertex -> Array Position Char -> MinPrioHeap Int Vertex
+        exploreVertex dis (V pos ori) q map = let
             k = if map Array.! tsum pos ori /= '#' then Heap.insert (dis + 1, V (tsum pos ori) ori) q else q
             in if ori == (1, 0) || ori == (-1, 0) then
                 Heap.insert (dis + 1000, V pos (0, 1)) $ Heap.insert (dis + 1000, V pos (0, -1)) k
@@ -61,14 +61,14 @@ puzzle1 s = snd . head . dropWhile (\(V p _, _) -> p /= (1, width s - 2))
     $ dijkstra (V (height s - 2, 1) (0, 1)) (parseInput s)
 
 puzzle2 :: String -> Int
-puzzle2 s = Map.size $ Map.mapKeys (\(V p _) -> p) $ results s
+puzzle2 s = List.maximum . List.map (Map.size . Map.mapKeys (\(V p _) -> p)) $ results s
     where
-        results :: String -> Map Vertex Int
-        results s = Map.filter (== puzzle1 s) $ Map.unionWith (+) (start s) (end s)
+        results :: String -> [Map Vertex Int]
+        results s = List.map (Map.filter (== puzzle1 s) . Map.unionWith (+) (start s)) $ end s
 
         start :: String -> Map Vertex Int
         start s = Map.fromList $ dijkstra (V (height s - 2, 1) (0, 1)) (parseInput s)
 
-        end :: String -> Map Vertex Int
-        end s = Map.mapKeys (\(V p (dy, dx)) -> V p (dy * (-1), dx * (-1)))
-            . Map.fromList $ dijkstra (V (1, width s - 2) (1, 0)) (parseInput s)
+        end :: String -> [Map Vertex Int]
+        end s = List.map (\d -> Map.mapKeys (\(V p (dy, dx)) -> V p (dy * (-1), dx * (-1)))
+            . Map.fromList $ dijkstra (V (1, width s - 2) d) (parseInput s)) orientations
