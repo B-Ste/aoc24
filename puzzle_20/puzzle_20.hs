@@ -11,6 +11,7 @@ module Main where
     main = do
         input <- readFile "input.txt"
         print . puzzle1 $ input
+        print . puzzle2 $ input
 
     maxInd :: String -> (Int, Int)
     maxInd s = ((length . lines $ s) - 1, (length . head . lines $ s) - 1)
@@ -68,9 +69,35 @@ module Main where
                 Just pk2 = Map.lookup p2 race
                 in abs (pk1 - pk2) - 2
 
+    parseAllCheats :: Array Position Char -> Map Position Int -> [Int]
+    parseAllCheats a race = concatMap (parseParticularCheats . fst) . filter (traversable . snd) . Array.assocs $ a
+        where
+            parseParticularCheats :: Position -> [Int]
+            parseParticularCheats s = mapMaybe (parseCheat s) $ allCheats s
+
+            parseCheat :: Position -> Position -> Maybe Int
+            parseCheat start end 
+                | traversable $ a Array.! end = let 
+                    Just pk1 = Map.lookup start race
+                    Just pk2 = Map.lookup end race
+                in Just (pk2 - pk1 - distance start end)
+                | otherwise = Nothing
+
+            allCheats :: Position -> [Position]
+            allCheats p = [(y, x) | y <- [0..140], x <- [0..140], distance p (y, x) <= 20]
+
+            distance :: Position -> Position -> Int
+            distance (py, px) (y, x) = abs(py - y) + abs(px - x)
+
     puzzle1 :: String -> Int
     puzzle1 s = let 
         a = parseMap s 
         race = parseRace (start a) a
         in Map.size . Map.filter (>= 100) $ parseCheats a race
+
+    puzzle2 :: String -> Int
+    puzzle2 s = let
+        a = parseMap s
+        race = parseRace (start a) a
+        in length . filter (>= 100) $ parseAllCheats a race
         
