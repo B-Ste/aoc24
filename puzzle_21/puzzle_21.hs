@@ -1,10 +1,12 @@
 module Main where
-    import Debug.Trace
+    import Data.Map (Map)
+    import qualified Data.Map as Map
 
     main :: IO ()
     main = do
         input <- readFile "input.txt"
         print . puzzle1 $ input
+        print . puzzle2 $ input
 
     parseNumeric :: String -> String
     parseNumeric = parseNumericAcc 'A'
@@ -146,13 +148,6 @@ module Main where
     advanceNumeric 'A' '9' = "^^^A"
     advanceNumeric 'A' 'A' = "A"
 
-    parseDirectional :: String -> String
-    parseDirectional = parseDirectionalAcc 'A'
-        where
-            parseDirectionalAcc :: Char -> String -> String
-            parseDirectionalAcc _ [] = []
-            parseDirectionalAcc s (x:xs) = advanceDirectional s x ++ parseDirectionalAcc x xs
-
     advanceDirectional :: Char -> Char -> String
     advanceDirectional '>' '>' = "A"
     advanceDirectional '>' '<' = "<<A"
@@ -184,8 +179,28 @@ module Main where
     advanceDirectional 'A' 'v' = "<vA"
     advanceDirectional 'A' 'A' = "A"
 
-    fullChain :: String -> String
-    fullChain = parseDirectional . parseDirectional . parseNumeric
+    costMap :: Int -> Map (Char, Char) Int
+    costMap 0 = Map.fromList [((a, b), 1) | a <- ['A', '^', 'v', '<', '>'], b <- ['A', '^', 'v', '<', '>']]
+    costMap i = Map.fromList [((a, b), cost 'A' (advanceDirectional a b)) | a <- ['A', '^', 'v', '<', '>'], b <- ['A', '^', 'v', '<', '>']]
+        where
+            k = costMap (i - 1)
+
+            cost :: Char -> String -> Int
+            cost _ [] = 0
+            cost a (x:xs) = let Just kj = Map.lookup (a, x) k in kj + cost x xs
+
+    costGes :: String -> Map (Char, Char) Int -> Int
+    costGes = costGesAcc 'A'
+        where
+            costGesAcc :: Char -> String -> Map (Char, Char) Int -> Int
+            costGesAcc _ [] _ = 0
+            costGesAcc a (x:xs) m = let Just k = Map.lookup (a, x) m in k + costGesAcc x xs m
+
+    solve :: Int -> String -> Int
+    solve n = sum . map (\s -> let k = read (init s) in k * costGes (parseNumeric s) (costMap n)) . lines
 
     puzzle1 :: String -> Int
-    puzzle1 = sum . map (\s -> let k = read (init s) in k * (length . fullChain $ s)) . lines
+    puzzle1 = solve 2
+
+    puzzle2 :: String -> Int
+    puzzle2 = solve 25
