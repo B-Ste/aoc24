@@ -3,12 +3,13 @@ module Main where
     import qualified Data.Map as Map
     import Data.Set (Set)
     import qualified Data.Set as Set
-    import Data.List (nub, sort)
+    import Data.List (nub, sort, maximumBy)
 
     main :: IO ()
     main = do
         input <- readFile "input.txt"
         print . puzzle1 $ input
+        print . puzzle2 $ input
 
     parseGraph :: String -> Map String (Set String)
     parseGraph = foldl f Map.empty . lines
@@ -18,8 +19,8 @@ module Main where
                 Map.insertWith Set.union [a, b] (Set.singleton [c, d])
                 $ Map.insertWith Set.union [c, d] (Set.singleton [a, b]) m
 
-    parseNodes :: String -> [String]
-    parseNodes = nub . filter (\(x:xs) -> x == 't') . words . map (\t -> case t of
+    parseNodes :: (String -> Bool) -> String -> [String]
+    parseNodes f = nub . filter f . words . map (\t -> case t of
         '-' -> ' '
         '\n' -> ' '
         t -> t)
@@ -32,8 +33,29 @@ module Main where
             let (Just p) = Map.lookup x2m m
             in if Set.member s p then sort [s, x1, x2m] else []) x2) s1l s2l
 
+    clique :: Map String (Set String) -> String -> [String] -> [String]
+    clique m st = foldl (\a ss -> if cliqueMember a ss then ss:a else a) [st]
+        where
+            cliqueMember :: [String] -> String -> Bool
+            cliqueMember c s = let (Just sk) = Map.lookup s m
+                in Set.isSubsetOf (Set.fromList c) sk
+
+    cliques :: Map String (Set String) -> [String] -> [[String]]
+    cliques m n = map (\s -> clique m s n) n
+
     puzzle1 :: String -> Int
     puzzle1 s = let
         g = parseGraph s
-        n = parseNodes s
+        n = parseNodes (\(x:xs) -> x == 't') s
         in length . nub $ concatMap (threeLoops g) n
+
+    puzzle2 :: String -> String
+    puzzle2 s = let
+        g = parseGraph s
+        n = parseNodes (const True) s
+        in init . concatMap (\a -> a ++ [',']) . sort . maximumBy (\s1 s2 ->
+            if length s1 > length s2
+                then GT
+            else if length s1 == length s2
+                then EQ
+            else LT) $ cliques g n
