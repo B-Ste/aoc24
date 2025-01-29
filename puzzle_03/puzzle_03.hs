@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Eta reduce" #-}
 module Main where
 
     import Data.Char (isDigit)
@@ -7,14 +5,14 @@ module Main where
     main :: IO ()
     main = do
         input <- readFile "input.txt"
-        putStr (puzzle1 input)
-        putStr (puzzle2 input)
+        print . puzzle1 $ input
+        print . puzzle2 $ input
 
-    puzzle1 :: String -> String
-    puzzle1 input = show (calculate (parseMul input False False [])) ++ "\n"
+    puzzle1 :: String -> Int
+    puzzle1 input = calculate $ parseMul input False False []
 
-    puzzle2 :: String -> String
-    puzzle2 input = show (calculate (parseMul input True True [])) ++ "\n"
+    puzzle2 :: String -> Int
+    puzzle2 input = calculate $ parseMul input True True []
 
     -- first bool enables conditional parsing, second bool holds starting value
     parseMul :: String -> Bool -> Bool -> [(Int, Int)] -> [(Int, Int)]
@@ -51,4 +49,4 @@ module Main where
     parseMul (x:xs) en st t = parseMul xs en st t
 
     calculate :: [(Int, Int)] -> Int
-    calculate x = foldl (\i (a, b) -> i + a * b) 0 x
+    calculate = foldl (\i (a, b) -> i + a * b) 0
