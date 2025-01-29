@@ -3,23 +3,17 @@ module Main where
     main :: IO ()
     main = do
         input <- readFile "input.txt"
-        putStr (puzzle1 input)
-        putStr (puzzle2 input)
+        print . puzzle1 $ input
+        print . puzzle2 $ input
 
-    puzzle1 :: String -> String
-    puzzle1 input = show (calculate (parseInput input)) ++ "\n"
-        where
-            calculate :: [[Int]] -> Int
-            calculate x = length (filter safeReport x)
+    puzzle1 :: String -> Int
+    puzzle1 = length . filter safeReport . parseInput 
 
-    puzzle2 :: String -> String
-    puzzle2 input = show (calculate (parseInput input)) ++ "\n"
-        where
-            calculate :: [[Int]] -> Int
-            calculate x = length (filter safeReportDampened x)
+    puzzle2 :: String -> Int
+    puzzle2 = length . filter safeReportDampened . parseInput
 
     parseInput :: String -> [[Int]]
-    parseInput input = map (map read . words) (lines input)
+    parseInput = map (map read . words) . lines
 
     safeReport :: [Int] -> Bool
     safeReport (x:xs) = let
