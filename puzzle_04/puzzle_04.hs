@@ -3,8 +3,8 @@ module Main where
     main :: IO()
     main = do
         input <- readFile "input.txt"
-        print (puzzle1 input)
-        print (puzzle2 input)
+        print . puzzle1 $ input
+        print . puzzle2 $ input
 
     puzzle1 :: String -> Int
     puzzle1 input = parseXMASStringSet input
@@ -17,44 +17,39 @@ module Main where
         + parseXMASStringSet (diagonalise (transpose (unlines (reverse (lines input)))))
 
     parseXMASStringSet :: String -> Int
-    parseXMASStringSet x = parseXMASString x 0
-
-    parseXMASString :: String -> Int -> Int
-    parseXMASString [] i = i
-    parseXMASString ('X':'M':'A':'S':xs) i = parseXMASString xs (i + 1)
-    parseXMASString (x:xs) i = parseXMASString xs i
+    parseXMASStringSet [] = 0
+    parseXMASStringSet ('X':'M':'A':'S':xs) = 1 + parseXMASStringSet xs
+    parseXMASStringSet (x:xs) = parseXMASStringSet xs
 
     transpose :: String -> String
-    transpose [] = []
-    transpose s = unlines (transposeLines (lines s))
+    transpose = unlines . transposeLines . lines
         where
             transposeLines :: [String] -> [String]
             transposeLines ([]:xs) = []
             transposeLines s = map head s : transposeLines (map tail s)
 
     diagonalise :: String -> String
-    diagonalise [] = []
-    diagonalise s = unlines (diagonaliseLines [] (lines s) [])
+    diagonalise = unlines . diagonaliseLines [] . lines
         where
-            diagonaliseLines :: [String] -> [String] -> [String] -> [String]
-            diagonaliseLines [] [] acc = acc
-            diagonaliseLines xs [] acc = diagonaliseLines (removeFirstElements xs) [] (acc ++ [map head xs])
-            diagonaliseLines xs (y:ys) acc = diagonaliseLines (removeFirstElements (xs ++ [y])) ys (acc ++ [map head (xs ++ [y])])
+            diagonaliseLines :: [String] -> [String] -> [String]
+            diagonaliseLines [] [] = []
+            diagonaliseLines xs [] = map head xs : diagonaliseLines (removeFirstElements xs) []
+            diagonaliseLines xs (y:ys) = map head (xs ++ [y]) : diagonaliseLines (removeFirstElements (xs ++ [y])) ys
 
     removeFirstElements :: [String] -> [String]
-    removeFirstElements s = filter (/= "") (map tail s)
+    removeFirstElements = filter (/= "") . map tail
 
     puzzle2 :: String -> Int
-    puzzle2 input = parseX_MASString (lines input) 0
+    puzzle2 = parseXMASString . lines
 
-    parseX_MASString :: [String] -> Int -> Int
-    parseX_MASString (a:b:c:xs) i = parseX_MASString (b:c:xs) (i + masCount a b c 0)
-    parseX_MASString _ i = i
+    parseXMASString :: [String] -> Int
+    parseXMASString (a:b:c:xs) = masCount a b c + parseXMASString (b:c:xs)
+    parseXMASString _ = 0
 
-    masCount :: String -> String -> String -> Int -> Int
-    masCount [] [] [] i = i
-    masCount ('M':a:'M':xs) (b:'A':c:ys) ('S':d:'S':zs) i = masCount (a:'M':xs) ('A':c:ys) (d:'S':zs) (i + 1)
-    masCount ('S':a:'M':xs) (b:'A':c:ys) ('S':d:'M':zs) i = masCount (a:'M':xs) ('A':c:ys) (d:'M':zs) (i + 1)
-    masCount ('M':a:'S':xs) (b:'A':c:ys) ('M':d:'S':zs) i = masCount (a:'S':xs) ('A':c:ys) (d:'S':zs) (i + 1)
-    masCount ('S':a:'S':xs) (b:'A':c:ys) ('M':d:'M':zs) i = masCount (a:'S':xs) ('A':c:ys) (d:'M':zs) (i + 1)
-    masCount (a:xs) (b:ys) (c:zs) i = masCount xs ys zs i
+    masCount :: String -> String -> String -> Int
+    masCount [] [] [] = 0
+    masCount ('M':a:'M':xs) (b:'A':c:ys) ('S':d:'S':zs) = 1 + masCount (a:'M':xs) ('A':c:ys) (d:'S':zs)
+    masCount ('S':a:'M':xs) (b:'A':c:ys) ('S':d:'M':zs) = 1 + masCount (a:'M':xs) ('A':c:ys) (d:'M':zs)
+    masCount ('M':a:'S':xs) (b:'A':c:ys) ('M':d:'S':zs) = 1 + masCount (a:'S':xs) ('A':c:ys) (d:'S':zs)
+    masCount ('S':a:'S':xs) (b:'A':c:ys) ('M':d:'M':zs) = 1 + masCount (a:'S':xs) ('A':c:ys) (d:'M':zs)
+    masCount (a:xs) (b:ys) (c:zs) = masCount xs ys zs
