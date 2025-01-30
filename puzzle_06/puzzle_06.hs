@@ -21,18 +21,18 @@ module Main where
     main :: IO ()
     main = do
         input <- readFile "input.txt"
-        (print . puzzle1) input
-        (print . puzzle2) input
+        print . puzzle1 $ input
+        print . puzzle2 $ input
 
     obsMap :: String -> [Position]
-    obsMap s = obsMapAcc (lines s) (0, 0) []
+    obsMap = obsMapAcc (0, 0) . lines
         where
-            obsMapAcc :: [String] -> Position -> [Position] -> [Position]
-            obsMapAcc [] (_, _) acc = acc
-            obsMapAcc ([]:ks) (x, y) acc = obsMapAcc ks (0, y + 1) acc
-            obsMapAcc ((i:is):ks) (x, y) acc
-                | i == '#' = obsMapAcc (is:ks) (x + 1, y) ((x, y):acc)
-                | otherwise = obsMapAcc (is:ks) (x + 1, y) acc
+            obsMapAcc :: Position -> [String] -> [Position]
+            obsMapAcc (_, _) [] = []
+            obsMapAcc (x, y) ([]:ks) = obsMapAcc (0, y + 1) ks
+            obsMapAcc (x, y) ((i:is):ks)
+                | i == '#' = (x, y) : obsMapAcc (x + 1, y) (is:ks)
+                | otherwise = obsMapAcc (x + 1, y) (is:ks)
 
     guardPos :: String -> Guard
     guardPos s = guardPosAcc (lines s) (0, 0)
@@ -62,10 +62,10 @@ module Main where
         | otherwise = G Main.Left (x - 1, y)
 
     fieldLength :: String -> Int
-    fieldLength s = length (head (lines s))
+    fieldLength = length . head . lines
 
     fieldHeight :: String -> Int
-    fieldHeight s = length (lines s)
+    fieldHeight = length . lines
 
     fieldBorders :: String -> Position
     fieldBorders s = (fieldLength s, fieldHeight s)
