@@ -5,25 +5,21 @@ module Main where
     main :: IO()
     main = do
         input <- readFile "input.txt"
-        (print . puzzle1) input
-        (print . puzzle2) input
+        print . puzzle1 $ input
+        print . puzzle2 $ input
 
     divide :: String -> ([String], [String])
-    divide input = divideLines (lines input) ([], [])
-        where
-            divideLines :: [String] -> ([String], [String]) -> ([String], [String])
-            divideLines (x:xs) (a, b)
-                | null x = (a, xs)
-                | otherwise = divideLines xs (a ++ [x], b)
+    divide = (\(a, b) -> (a, tail b)) . break null . lines
 
     buildMap :: [String] -> Map Int [Int] 
-    buildMap x = buildMapAcc x Map.empty
+    buildMap = buildMapAcc Map.empty
         where
-            buildMapAcc :: [String] -> Map Int [Int] -> Map Int [Int] 
-            buildMapAcc [] acc = acc
-            buildMapAcc ([a, b, '|', c, d]:xs) acc 
-                | Map.member (stringToInt [a, b]) acc = let (Just x) = Map.lookup (stringToInt [a, b]) acc in buildMapAcc xs (Map.insert (stringToInt [a, b]) (stringToInt [c, d]:x) acc)
-                | otherwise = buildMapAcc xs (Map.insert (stringToInt [a, b]) [stringToInt [c, d]] acc)
+            buildMapAcc :: Map Int [Int] -> [String] -> Map Int [Int] 
+            buildMapAcc acc [] = acc
+            buildMapAcc acc ([a, b, '|', c, d]:xs)
+                | Map.member (stringToInt [a, b]) acc = let (Just x) = Map.lookup (stringToInt [a, b]) acc 
+                    in buildMapAcc (Map.insert (stringToInt [a, b]) (stringToInt [c, d]:x) acc) xs
+                | otherwise = buildMapAcc (Map.insert (stringToInt [a, b]) [stringToInt [c, d]] acc) xs
 
     stringToInt :: String -> Int
     stringToInt = read
@@ -39,13 +35,13 @@ module Main where
 
     evaluateUpdateCorrrected :: [Int] -> Map Int [Int] -> Int
     evaluateUpdateCorrrected x m
-        | not (validUpdate x m) = middle (topoSort x m)
+        | not $ validUpdate x m = middle (topoSort x m)
         | otherwise = 0
 
     validUpdate :: [Int] -> Map Int [Int] -> Bool
     validUpdate [] _ = True
     validUpdate (x:xs) m
-        | not (containedInMap x xs m) = validUpdate xs m
+        | not $ containedInMap x xs m = validUpdate xs m
         | otherwise = False
 
     containedInMap :: Int -> [Int] -> Map Int [Int] -> Bool
@@ -71,15 +67,15 @@ module Main where
                 | otherwise = x:y:ys
 
     puzzle1 :: String -> Int
-    puzzle1 input = calculate (snd (divide input)) (buildMap (fst (divide input))) 0
+    puzzle1 input = calculate (snd . divide $ input) (buildMap . fst . divide $ input)
         where
-            calculate :: [String] -> Map Int [Int] -> Int -> Int
-            calculate [] _ acc = acc
-            calculate (x:ys) m acc = calculate ys m (acc + evaluateUpdate (convertInt x) m)
+            calculate :: [String] -> Map Int [Int] -> Int
+            calculate [] _ = 0
+            calculate (x:ys) m = evaluateUpdate (convertInt x) m + calculate ys m
 
     puzzle2 :: String -> Int
-    puzzle2 input = calculate (snd (divide input)) (buildMap (fst (divide input))) 0
+    puzzle2 input = calculate (snd . divide $ input) (buildMap . fst . divide $ input)
         where
-            calculate :: [String] -> Map Int [Int] -> Int -> Int
-            calculate [] _ acc = acc
-            calculate (x:xs) m acc = calculate xs m (acc + evaluateUpdateCorrrected (convertInt x) m)
+            calculate :: [String] -> Map Int [Int] -> Int
+            calculate [] _ = 0
+            calculate (x:xs) m = evaluateUpdateCorrrected (convertInt x) m + calculate xs m 
